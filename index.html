@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Студенттерге арналған панель: кесте, үй жұмысы, пәндер, анықтама және допуск есебі.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Студент панелі</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: campus-photo landing → overlapping student dashboard → 3D tab buttons → one panel per section.
+   Palette from the AIU photo: glass blue (accent), sign navy, sandstone facade, gold band. */
+:root {
+  --accent: #1f5fbf;
+  --navy: #1b2a7a;
+  --sand: #e3cba3;
+  --sand-soft: #f7f0e3;
+  --bg: #f2f5fa;
+  --surface: #ffffff;
+  --glass: rgba(255,255,255,.72);
+  --sunk: #eef2f9;
+  --ink: #0e1b3d;
+  --muted: #586683;
+  --line: #dde4ef;
+  --gold: #b9832a;
+  --ok: #1f8a54;   --warn: #b56d00; --bad: #c53a32;
+  --shadow: 0 1px 2px rgba(15,27,45,.06), 0 8px 24px rgba(29,95,209,.08);
+  --accent-soft: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  --accent-deep: color-mix(in srgb, var(--accent) 68%, #000);
+  --accent-ink: #ffffff;
+  --ok-soft: color-mix(in srgb, var(--ok) 13%, var(--surface));
+  --warn-soft: color-mix(in srgb, var(--warn) 14%, var(--surface));
+  --bad-soft: color-mix(in srgb, var(--bad) 12%, var(--surface));
+  --f-display: "Unbounded", "Golos Text", system-ui, sans-serif;
+  --f-body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a1226; --surface: #111c36; --glass: rgba(17,28,54,.74); --sunk: #0d1730; --ink: #e8eefb; --muted: #97a6c2; --line: #223154;
+    --navy: #aab8ff; --sand: #6b5a3c; --sand-soft: #241f16; --gold: #e6b45a; --ok: #4fc285; --warn: #f0a845; --bad: #f07a70;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a1226; --surface: #111c36; --glass: rgba(17,28,54,.74); --sunk: #0d1730; --ink: #e8eefb; --muted: #97a6c2; --line: #223154;
+  --navy: #aab8ff; --sand: #6b5a3c; --sand-soft: #241f16; --gold: #e6b45a; --ok: #4fc285; --warn: #f0a845; --bad: #f07a70;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 56px;
+  overflow-x: hidden;
+}
+/* soft moving light behind everything */
+.aura { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: var(--bg); }
+.aura i { position: absolute; width: 46vmax; height: 46vmax; border-radius: 50%; filter: blur(70px); opacity: .35; background: var(--accent); }
+.aura i:nth-child(1) { top: -22vmax; left: -12vmax; }
+.aura i:nth-child(2) { bottom: -26vmax; right: -14vmax; background: color-mix(in srgb, var(--accent) 55%, #22c1ee); opacity: .22; }
+@media (prefers-reduced-motion: no-preference) {
+  .aura i:nth-child(1) { animation: drift 22s ease-in-out infinite alternate; }
+  .aura i:nth-child(2) { animation: drift 28s ease-in-out infinite alternate-reverse; }
+}
+@keyframes drift { to { transform: translate(8vmax, 6vmax) scale(1.1); } }
+
+.app { max-width: 1040px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font: 700 clamp(20px, 3vw, 26px)/1.15 var(--f-display); letter-spacing: -0.015em; }
+h2 { font: 700 18px/1.3 var(--f-body); }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+/* ===== 3D button ===== */
+.b3 {
+  --face: var(--surface); --edge: var(--line); --txt: var(--ink); --depth: 4px;
+  position: relative; overflow: hidden; isolation: isolate;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--edge); border-radius: 12px; padding: 9px 16px;
+  background: var(--face); color: var(--txt); font-weight: 600; cursor: pointer; user-select: none;
+  box-shadow: 0 var(--depth) 0 var(--edge), 0 calc(var(--depth) + 6px) 14px rgba(15,27,45,.10);
+  transform: translateY(0);
+  transition: transform .12s cubic-bezier(.3,.7,.4,1.4), box-shadow .12s, background-color .25s, color .25s, border-color .25s;
+}
+.b3:hover { transform: translateY(-2px); box-shadow: 0 calc(var(--depth) + 2px) 0 var(--edge), 0 calc(var(--depth) + 12px) 20px rgba(15,27,45,.14); }
+.b3:active, .b3.pressed {
+  transform: translateY(var(--depth));
+  box-shadow: 0 0 0 var(--edge), 0 2px 6px rgba(15,27,45,.12);
+  --face: var(--accent); --txt: var(--accent-ink); --edge: var(--accent-deep);
+}
+.b3.primary { --face: var(--accent); --edge: var(--accent-deep); --txt: var(--accent-ink); }
+.b3.primary:active, .b3.primary.pressed { --face: color-mix(in srgb, var(--accent) 60%, #22c1ee); --edge: var(--accent-deep); }
+.b3[aria-pressed="true"] { --face: var(--accent); --edge: var(--accent-deep); --txt: var(--accent-ink); }
+.b3.sm { padding: 5px 12px; border-radius: 10px; --depth: 3px; font-size: 13.5px; }
+.b3 svg { width: 18px; height: 18px; flex: none; }
+.ripple { position: absolute; border-radius: 50%; pointer-events: none; background: currentColor; opacity: .28; transform: scale(0); z-index: -1; }
+@media (prefers-reduced-motion: no-preference) { .ripple { animation: rip .55s ease-out forwards; } }
+@keyframes rip { to { transform: scale(2.6); opacity: 0; } }
+
+/* ===== landing (campus photo) ===== */
+.landing {
+  position: relative; isolation: isolate; overflow: hidden; border-radius: 24px;
+  min-height: clamp(330px, 46vw, 460px); display: grid; align-items: end;
+  background: #1b2a55; box-shadow: var(--shadow);
+}
+.land-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; z-index: -2; }
+.land-shade {
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(8,16,42,0) 28%, rgba(8,16,42,.55) 60%, rgba(8,16,42,.9) 100%),
+    linear-gradient(90deg, rgba(8,16,42,.5), rgba(8,16,42,0) 62%);
+}
+.land-body { display: grid; gap: 12px; padding: 28px; max-width: 640px; color: #fff; min-width: 0; }
+.landing h1 { color: #fff; font-size: clamp(24px, 4.2vw, 40px); line-height: 1.1; text-shadow: 0 2px 18px rgba(0,0,0,.35); }
+.land-sub { color: rgba(255,255,255,.9); font-size: 16px; max-width: 52ch; }
+.eyebrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-glass {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; color: #fff;
+  background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.3);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.chip-glass.gold { background: color-mix(in srgb, #e6b45a 30%, transparent); border-color: rgba(230,180,90,.6); }
+.b3.glass { --face: rgba(255,255,255,.14); --edge: rgba(255,255,255,.4); --txt: #fff; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.land-note { font-size: 12px; color: rgba(255,255,255,.72); }
+@media (prefers-reduced-motion: no-preference) {
+  .land-img { animation: settle 1.1s cubic-bezier(.2,.7,.2,1); }
+  .dash > * { animation: lift .35s cubic-bezier(.2,.8,.2,1) backwards; }
+  .dash > *:nth-child(2) { animation-delay: .05s; }
+  .dash > *:nth-child(3) { animation-delay: .1s; }
+}
+@media (max-width: 560px) {
+  .landing { min-height: 300px; border-radius: 20px; }
+  .land-img { object-position: 58% 40%; }
+  .land-body { padding: 18px; gap: 10px; }
+  .landing h1 { font-size: 24px; }
+  .land-sub { font-size: 14.5px; }
+  .land-body .b3 { padding: 7px 12px; font-size: 14px; }
+  #open-settings span { display: none; }
+  .brand { font-size: 15px; }
+}
+@keyframes settle { from { transform: scale(1.05); } }
+@keyframes lift { from { transform: translateY(10px); } }
+
+/* ===== dashboard ===== */
+.dash { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: 14px; align-items: stretch; }
+@media (min-width: 901px) {
+  .dash { margin-top: -72px; padding-inline: 18px; position: relative; z-index: 1; }
+  .land-body { padding-bottom: 96px; }
+}
+@media (max-width: 900px) { .dash { grid-template-columns: 1fr 1fr; } .dash .next { grid-column: 1 / -1; } }
+@media (max-width: 560px) { .dash { grid-template-columns: 1fr; } }
+.dash .box { display: grid; gap: 10px; align-content: start; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mini-hw { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); }
+.mini-hw:first-child { border-top: 0; padding-top: 0; }
+.mini-hw p { font-size: 13.5px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.adm-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.adm-row div { background: var(--sunk); border-radius: 12px; padding: 8px 10px; display: grid; }
+.adm-row b { font: 700 20px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.adm-row span { font-size: 12px; color: var(--muted); }
+.link-btn { justify-self: start; }
+
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.stat b { font: 700 20px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+
+.topbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 10px; font: 700 16px var(--f-display); }
+.brand .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; box-shadow: 0 3px 0 var(--accent-deep); }
+.brand .logo svg { width: 20px; height: 20px; }
+.top-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* ===== tabs ===== */
+.tabs-wrap { overflow-x: auto; padding: 4px 2px 12px; margin: 0 -2px; scrollbar-width: none; }
+.tabs { display: flex; gap: 10px; min-width: max-content; }
+
+.panel { display: grid; gap: 16px; }
+@media (prefers-reduced-motion: no-preference) { .panel:not([hidden]) { animation: rise .28s cubic-bezier(.2,.8,.2,1); } }
+@keyframes rise { from { transform: translateY(8px); } }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-width: 0; box-shadow: var(--shadow); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.between { justify-content: space-between; }
+.tilt { transform-style: preserve-3d; transition: transform .2s ease-out; will-change: transform; }
+
+.field { display: grid; gap: 5px; min-width: 0; }
+.field input, .field select, .field textarea, .inp {
+  border: 1px solid var(--line); background: var(--sunk); border-radius: 10px; padding: 9px 11px; width: 100%;
+  transition: border-color .2s, box-shadow .2s;
+}
+.field input:focus, .field textarea:focus, .field select:focus, .inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field textarea { resize: vertical; min-height: 74px; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.info { background: var(--accent-soft); color: var(--accent); }
+.pill.idle { background: var(--sunk); color: var(--muted); border: 1px solid var(--line); }
+
+/* schedule */
+.next { display: grid; gap: 8px; border-color: color-mix(in srgb, var(--gold) 45%, var(--line)); background: linear-gradient(140deg, var(--sand-soft), var(--surface) 75%); }
+.next .room-big { font: 700 26px/1.1 var(--f-display); color: var(--accent); }
+.days { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; }
+.lesson { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; padding: 12px 10px; border-radius: 12px; align-items: center; transition: background .2s; }
+.lesson + .lesson { border-top: 1px solid var(--line); border-radius: 0; }
+.lesson:hover { background: var(--sunk); }
+.lesson .t { font-family: var(--f-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.lesson .room { text-align: right; font-weight: 600; }
+.lesson.now { background: var(--accent-soft); border-radius: 12px; }
+.lesson.past { opacity: .5; }
+@media (max-width: 520px) { .lesson { grid-template-columns: 1fr auto; } .lesson .t { grid-column: 1 / -1; } }
+
+/* homework */
+.hw { display: grid; gap: 6px; padding: 14px 0; border-top: 1px solid var(--line); }
+.hw:first-child { border-top: 0; }
+.hw.done .text { text-decoration: line-through; color: var(--muted); }
+.hw-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hw-form .wide { grid-column: 1 / -1; }
+@media (max-width: 520px) { .hw-form { grid-template-columns: 1fr; } }
+.check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-size: 13.5px; color: var(--muted); }
+.check input { width: 17px; height: 17px; accent-color: var(--accent); }
+
+/* subjects */
+.subj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; perspective: 900px; }
+.subj-card { text-align: left; display: grid; gap: 8px; align-content: start; padding: 16px; border-radius: var(--r); }
+.subj-card .ico { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font: 700 15px var(--f-display); transition: background .25s, color .25s; }
+.subj-card[aria-pressed="true"] .ico, .subj-card:active .ico { background: var(--accent-ink); color: var(--accent); }
+.subj-card .meta { font-weight: 400; font-size: 13px; opacity: .8; }
+.mat-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 720px) { .mat-cols { grid-template-columns: 1fr; } }
+.mat-cols ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.mat-cols li { padding: 10px 12px; background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+.mat-cols li .muted { display: block; font-size: 12.5px; }
+
+/* info */
+.search { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 14px 16px; font-size: 16px; box-shadow: var(--shadow); }
+.search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.quick { display: flex; flex-wrap: wrap; gap: 10px; }
+details.faq { border-top: 1px solid var(--line); padding: 14px 0; }
+details.faq:first-child { border-top: 0; }
+details.faq summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+details.faq summary::-webkit-details-marker { display: none; }
+details.faq summary::after { content: "+"; color: var(--accent); font-weight: 700; transition: transform .25s; }
+details.faq[open] summary::after { transform: rotate(45deg); }
+details.faq .body { margin-top: 8px; color: var(--muted); max-width: 65ch; }
+
+/* dopusk */
+.d-sum { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+@media (max-width: 720px) { .d-sum { grid-template-columns: 1fr 1fr; } }
+.d-sum .stat { border-radius: 14px; }
+.dtable-wrap { overflow-x: auto; margin: 0 -6px; padding: 0 6px; }
+table.dt { width: 100%; border-collapse: collapse; min-width: 760px; }
+.dt th, .dt td { text-align: left; padding: 9px 6px; border-top: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+.dt thead th { border-top: 0; }
+.dt td.calc { font-family: var(--f-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+.dt td.calc.strong { color: var(--ink); font-weight: 600; }
+.dt input { width: 64px; border: 1px solid var(--line); background: var(--sunk); border-radius: 8px; padding: 6px 7px; font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.dt input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.dt tr { cursor: pointer; transition: background .2s; }
+.dt tbody tr:hover td { background: var(--sunk); }
+.dt tr.sel td { background: var(--accent-soft); }
+.dt th.grp { color: var(--accent); }
+.d-detail { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: center; }
+@media (max-width: 640px) { .d-detail { grid-template-columns: 1fr; justify-items: center; } .d-detail > div:last-child { justify-self: stretch; } }
+.ring { width: 200px; height: 200px; }
+.ring .track { stroke: var(--sunk); }
+.ring .arc { stroke: var(--accent); transition: stroke-dasharray .8s cubic-bezier(.2,.8,.2,1), stroke .3s; }
+.ring .tick { stroke: var(--ink); opacity: .55; }
+.ring text { fill: var(--ink); font-family: var(--f-display); }
+.ring .sub { fill: var(--muted); font-family: var(--f-body); font-size: 11px; }
+.steps { display: grid; gap: 8px; }
+.step { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; background: var(--sunk); border: 1px solid var(--line); border-radius: 12px; }
+.step .k { font: 700 13px var(--f-display); color: var(--accent); }
+.step .v { font-family: var(--f-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.grades { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.grade { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; display: grid; gap: 1px; background: var(--surface); }
+.grade .g { font: 700 16px var(--f-display); }
+.grade.stip { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+.grade.no { opacity: .4; }
+.callout { padding: 12px 14px; border-radius: 12px; font-weight: 500; }
+.callout.ok { background: var(--ok-soft); color: var(--ok); }
+.callout.warn { background: var(--warn-soft); color: var(--warn); }
+.callout.bad { background: var(--bad-soft); color: var(--bad); }
+.callout.info { background: var(--accent-soft); color: var(--accent); }
+.formula { font-family: var(--f-mono); font-size: 13px; background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; overflow-x: auto; display: grid; gap: 4px; }
+.formula div { white-space: nowrap; }
+
+.note { font-size: 12.5px; color: var(--muted); }
+
+/* settings drawer */
+.scrim { position: fixed; inset: 0; background: rgba(8,14,26,.35); z-index: 30; backdrop-filter: blur(2px); }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(360px, 100vw); z-index: 31;
+  background: var(--surface); border-left: 1px solid var(--line); box-shadow: -20px 0 50px rgba(0,0,0,.18);
+  padding: calc(20px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
+  display: grid; align-content: start; gap: 22px; overflow-y: auto;
+}
+@media (prefers-reduced-motion: no-preference) { .drawer:not([hidden]) { animation: slide .3s cubic-bezier(.2,.8,.2,1); } }
+@keyframes slide { from { transform: translateX(40px); opacity: 0; } }
+.opt { display: grid; gap: 10px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.sw { width: 40px; height: 40px; border-radius: 12px; border: 0; cursor: pointer; background: var(--c); box-shadow: 0 4px 0 color-mix(in srgb, var(--c) 65%, #000); transition: transform .12s, box-shadow .12s; position: relative; }
+.sw:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+.sw[aria-pressed="true"]::after { content: ""; position: absolute; inset: -5px; border-radius: 15px; border: 2px solid var(--c); }
+.seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 40;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 12px 14px 12px 16px; border-radius: 14px;
+  max-width: min(92vw, 480px); box-shadow: 0 12px 30px rgba(0,0,0,.25); display: flex; gap: 12px; align-items: center;
+}
+.toast button { background: none; border: 1px solid currentColor; color: inherit; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) { .toast:not([hidden]) { animation: up .3s cubic-bezier(.2,.8,.2,1); } }
+@keyframes up { from { transform: translate(-50%, 16px); opacity: 0; } }
+
+/* phone bottom menu */
+.bottom-nav { display: none; }
+.bn { border: 0; background: none; display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border-radius: 12px; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; min-width: 0; }
+.bn svg { width: 22px; height: 22px; transition: transform .15s; }
+.bn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.bn[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.bn:active svg { transform: translateY(2px) scale(.9); }
+@media (max-width: 760px) {
+  .tabs-wrap { display: none; }
+  body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .bottom-nav {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
+    background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+    padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+  }
+  .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* next lesson */
+.next-grid { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+.nx-time b { display: block; font: 700 clamp(22px, 5.4vw, 30px)/1.05 var(--f-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nx-left { text-align: right; }
+.nx-left b { display: block; font: 700 clamp(18px, 4.4vw, 24px)/1.05 var(--f-display); color: var(--accent); white-space: nowrap; }
+.dash .next-grid { grid-template-columns: 1fr; gap: 8px; }
+.dash .nx-left { text-align: left; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.room-chip { display: inline-flex; gap: 6px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-weight: 600; }
+.room-chip svg { width: 16px; height: 16px; color: var(--accent); flex: none; }
+
+/* homework groups */
+.hw-group h3 { display: flex; gap: 8px; align-items: center; font-size: 14px; padding: 12px 0 2px; }
+.hw-group:first-child h3 { padding-top: 4px; }
+.hw-group h3 + .hw { border-top: 0; }
+
+/* dopusk cards (phone) */
+#d-cards { display: none; gap: 12px; }
+@media (max-width: 760px) { #d-table-box { display: none; } #d-cards { display: grid; } }
+.dcard { display: grid; gap: 12px; }
+.dcard.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+.dcard .ins { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.dcard .ins label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; min-width: 0; }
+.dcard .ins input { width: 100%; min-width: 0; border: 1px solid var(--line); background: var(--sunk); border-radius: 10px; padding: 9px 10px; font-family: var(--f-mono); font-size: 16px; }
+.dcard .ins input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.dcard .outs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; text-align: center; }
+.dcard .outs div { background: var(--sunk); border-radius: 10px; padding: 6px 4px; min-width: 0; }
+.dcard .outs b { display: block; font-family: var(--f-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+.dcard .outs span { font-size: 11px; color: var(--muted); }
+.missing { font-size: 13px; color: var(--warn); font-weight: 500; white-space: normal; }
+.formula .wrap { white-space: normal; font-family: var(--f-body); font-size: 13.5px; }
+.formula strong { font-family: var(--f-body); }
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rules label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); align-content: end; }
+</style>
+</head>
+<body>
+
+<div class="aura" aria-hidden="true"><i></i><i></i></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5"/></svg></span>
+      <span data-i="brand"></span>
+    </div>
+    <div class="top-actions">
+      <div class="row" role="group" data-i-aria="role" style="gap:8px">
+        <button class="b3 sm" id="role-student" data-i="student"></button>
+        <button class="b3 sm" id="role-starosta" data-i="starosta"></button>
+      </div>
+      <button class="b3 sm" id="lang-quick" aria-label="Language"></button>
+      <button class="b3 sm" id="open-settings" data-i-aria="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i="settings"></span></button>
+    </div>
+  </div>
+
+  <nav class="tabs-wrap" data-i-aria="sections">
+    <div class="tabs" id="tabs"></div>
+  </nav>
+
+  <!-- 1 -->
+  <section class="panel" id="p-schedule">
+    <section class="landing" aria-labelledby="land-title">
+      <img class="land-img" id="land-img" src="img/aiu-campus-800.jpg"
+        srcset="img/aiu-campus-800.jpg 800w, img/aiu-campus-1450.webp 1450w"
+        sizes="(max-width: 1072px) 100vw, 1040px" width="1450" height="1085"
+        fetchpriority="high" decoding="async" alt="">
+      <div class="land-shade"></div>
+      <div class="land-body">
+        <div class="eyebrow"><span class="chip-glass gold" id="today-pill"></span><span class="chip-glass" data-i="sample"></span></div>
+        <h1 id="land-title"></h1>
+        <p class="land-sub" id="land-sub"></p>
+        <div class="row">
+          <button class="b3 primary" data-scroll="week" data-i="openWeek"></button>
+          <button class="b3 glass" data-goto="homework" id="land-hw"></button>
+        </div>
+        <p class="land-note" data-i="unofficial"></p>
+      </div>
+    </section>
+    <div class="dash">
+      <article class="box next tilt" id="next-box"></article>
+      <article class="box" id="dash-hw"></article>
+      <article class="box" id="dash-adm"></article>
+    </div>
+    <div class="box" id="week">
+      <div class="row between" style="margin-bottom:12px">
+        <h2 data-i="weekSchedule"></h2>
+        <div class="row small">
+          <label for="remind-min" class="muted" data-i="remind"></label>
+          <select id="remind-min" class="inp" style="width:auto;padding:6px 10px"></select>
+          <button class="b3 sm" id="test-remind" data-i="test"></button>
+        </div>
+      </div>
+      <p class="note" data-i="remindNote" style="margin-bottom:10px"></p>
+      <div class="days" id="days"></div>
+      <div id="lessons" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="panel" id="p-homework" hidden>
+    <div class="box" id="hw-form-box" hidden>
+      <div class="row between" style="margin-bottom:14px">
+        <h2 data-i="newHw"></h2>
+        <span class="pill info" data-i="starosta"></span>
+      </div>
+      <form class="hw-form" id="hw-form">
+        <div class="field"><label class="label" for="hw-subj" data-i="subject"></label><select id="hw-subj"></select></div>
+        <div class="field"><label class="label" for="hw-due" data-i="due"></label><input type="date" id="hw-due" required></div>
+        <div class="field wide"><label class="label" for="hw-text" data-i="task"></label><textarea id="hw-text" required></textarea></div>
+        <div class="wide row"><button class="b3 primary" type="submit" data-i="publish"></button><span class="note" id="hw-saved" hidden data-i="published"></span></div>
+      </form>
+    </div>
+    <div class="box">
+      <div class="row between" style="margin-bottom:6px">
+        <h2 data-i="homework"></h2>
+        <label class="check"><input type="checkbox" id="hw-hide-done"> <span data-i="hideDone"></span></label>
+      </div>
+      <p class="note" data-i="localNote" style="margin-bottom:4px"></p>
+      <div id="hw-list"></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="panel" id="p-subjects" hidden>
+    <div class="subj-grid" id="subj-grid"></div>
+    <div class="box" id="subj-detail"></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="panel" id="p-info" hidden>
+    <input class="search" id="info-q" type="search">
+    <div class="quick" id="info-quick"></div>
+    <div class="box" id="info-list"></div>
+  </section>
+
+  <!-- 5 -->
+  <section class="panel" id="p-dopusk" hidden>
+    <div class="d-sum" id="d-sum"></div>
+    <div id="d-cards"></div>
+    <div class="box" id="d-table-box">
+      <div class="row between" style="margin-bottom:10px">
+        <h2 data-i="scoresTitle"></h2>
+        <span class="note" data-i="tapRow"></span>
+      </div>
+      <div class="dtable-wrap">
+        <table class="dt">
+          <thead><tr>
+            <th class="label" data-i="subject"></th>
+            <th class="label">ТК1</th><th class="label">РК1</th><th class="label grp">Р1</th>
+            <th class="label">ТК2</th><th class="label">РК2</th><th class="label grp">Р2</th>
+            <th class="label grp" data-i="admShort"></th><th class="label" data-i="exam"></th><th class="label grp" data-i="final"></th><th class="label" data-i="status"></th>
+          </tr></thead>
+          <tbody id="dt-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="box" id="d-detail"></div>
+    <div class="formula" id="formula"></div>
+  </section>
+</div>
+
+<nav class="bottom-nav" id="bnav" data-i-aria="sections"></nav>
+
+<!-- settings -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="set-title">
+  <div class="row between"><h2 id="set-title" data-i="settings"></h2><button class="b3 sm" id="close-settings" data-i="close"></button></div>
+  <div class="opt"><span class="label" data-i="language"></span>
+    <div class="seg2"><button class="b3" data-lang="kk">Қазақша</button><button class="b3" data-lang="en">English</button></div></div>
+  <div class="opt"><span class="label" data-i="theme"></span>
+    <div class="seg3"><button class="b3 sm" data-mode="light" data-i="light"></button><button class="b3 sm" data-mode="dark" data-i="dark"></button><button class="b3 sm" data-mode="system" data-i="system"></button></div></div>
+  <div class="opt"><span class="label" data-i="color"></span>
+    <div class="swatches" id="swatches"></div>
+    <p class="note" data-i="colorNote"></p></div>
+  <div class="opt" id="rules-opt"><span class="label" data-i="rulesTitle"></span>
+    <div class="rules">
+      <label for="rule-adm"><span data-i="rAdm"></span><input class="inp" id="rule-adm" inputmode="decimal"></label>
+      <label for="rule-pass"><span data-i="rPass"></span><input class="inp" id="rule-pass" inputmode="decimal"></label>
+      <label for="rule-stip"><span data-i="rStip"></span><input class="inp" id="rule-stip" inputmode="decimal"></label>
+      <label for="rule-wex"><span data-i="rWex"></span><input class="inp" id="rule-wex" inputmode="decimal"></label>
+      <label for="rule-exmin"><span data-i="rExMin"></span><input class="inp" id="rule-exmin" inputmode="decimal"></label>
+    </div>
+    <p class="note" data-i="rulesNote"></p>
+    <div><button class="b3 sm" id="rules-reset" data-i="reset"></button></div></div>
+</aside>
+
+<div class="toast" id="toast" hidden role="status"><span id="toast-text"></span><button id="toast-close" data-i="close"></button></div>
+
+<script>
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ================= i18n =================
+let lang = store.get("uni2.lang", "kk");
+const T = {
+  kk: {
+    brand: "Студент панелі", student: "Студент", starosta: "Староста", role: "Рөл", settings: "Баптаулар", close: "Жабу",
+    sample: "мысал деректер", heroTitle: "Бүгінгі оқу күніңіз бір жерде",
+    heroSub: "Кесте, үй жұмысы, пән материалдары және допуск есебі. Қазір ИС-23-2 тобының мысал деректері тұр.",
+    stNext: "келесі сабаққа", stHw: "орындалмаған тапсырма", stAdm: "пәннен допуск бар", sections: "Бөлімдер",
+    tabSchedule: "Кесте", tabHomework: "Үй жұмысы", tabSubjects: "Пәндер", tabInfo: "Анықтама", tabDopusk: "Допуск",
+    weekSchedule: "Апталық кесте", remind: "Ескерту:", test: "Тексеру", today: "бүгін", noLessons: "Бұл күні сабақ жоқ.",
+    nextLesson: "Келесі сабақ", ongoing: "Қазір жүріп жатыр", left: "қалды", toEnd: "Аяқталуына", noWeek: "Алдағы аптада сабақ жоқ.",
+    remindOff: "Өшірулі", minBefore: "мин бұрын", remindMsg: "Сабаққа {t} қалды: {s}, {time}, {room}",
+    min: "мин", hr: "сағ", day: "күн", todayW: "Бүгін",
+    newHw: "Жаңа тапсырма жазу", subject: "Пән", due: "Тапсыру мерзімі", task: "Тапсырма", publish: "Жариялау", published: "Жарияланды. Топ көреді.",
+    hwPlaceholder: "Мысалы: 3-тараудағы 12–18 есептер, дәптерге шығарып әкелу",
+    homework: "Үй жұмыстары", hideDone: "Орындалғанды жасыру", doneLbl: "Орындадым", del: "Өшіру", wroteBy: "жазған", noHw: "Тапсырма жоқ.",
+    overdue: "Мерзімі өтті", dueToday: "Бүгін", dueTomorrow: "Ертең", inDays: "{n} күннен кейін", you: "Сіз (староста)",
+    hwOpen: "{n} үй жұмысы", allDone: "Бәрі орындалды", teacher: "Оқытушы",
+    lectures: "Лекциялар", tasks: "Тапсырмалар", links: "Сілтемелер",
+    searchPh: "Не іздейсіз? Мысалы: анықтама, жатақхана, стипендия", notFound: "«{q}» бойынша ештеңе табылмады. Деканатқа хабарласыңыз: Бас корпус, 210-кабинет.",
+    scoresTitle: "Баллдарыңызды енгізіңіз", tapRow: "Жолды басып, толық есебін көріңіз", admShort: "ЕЖР", exam: "Емтихан", final: "Қорытынды", status: "Күйі",
+    sumAdm: "Допуск бар", sumRisk: "Летоға қауіп", sumStip: "Стипендия сақталады", sumLost: "Стипендия қаупі",
+    stEmpty: "Балл жоқ", stNeedP2: "Р2 ≥ {n} керек", stNoAdm: "Летоға қалады", stAdmOk: "Допуск бар", stStip: "Стипендия бар", stPass: "Стипендиядан құлайды", stSummer: "Лето",
+    admRating: "Емтиханға жіберу рейтингі", finalScore: "Қорытынды балл",
+    needRk2: "Допуск алу үшін РК2-ден кемінде {n} балл керек (ТК2 = {tk2} болса).",
+    needP2: "Допуск алу үшін Р2 кемінде {n} болуы керек. Яғни ТК2 + РК2 ≥ {sum}.",
+    impossibleP2: "Р1 тым төмен: Р2 = 100 болса да ЕЖР 50-ге жетпейді. Летоға қалу қаупі бар, оқытушымен сөйлесіңіз.",
+    admOk: "Допуск бар. Емтиханға жіберілесіз.", admFail: "ЕЖР 50-ден төмен ({d}). Емтиханға жіберілмейсіз, летоға қаласыз. {m} балл жетпейді.",
+    examFor: "Әр бағаға емтиханнан қанша керек", examNeed50: "Летоға қалмау үшін емтиханнан кемінде {n} балл керек.",
+    examNeed70: "Стипендияны сақтау үшін (қорытынды ≥ 70) емтиханнан кемінде {n} балл керек.", examNo70: "Стипендияға (≥ 70) емтиханнан 100 алсаңыз да жетпейді.",
+    finStip: "Қорытынды {f}. Стипендия сақталады.", finPass: "Қорытынды {f}. Пәннен өттіңіз, бірақ 70-тен төмен, стипендиядан құлайсыз.", finSummer: "Қорытынды {f}. 50-ден төмен, летоға қаласыз.",
+    enterFirst: "ТК1 мен РК1 баллын енгізіңіз. Сосын допуск пен емтихан үшін қанша керек екенін есептейміз.",
+    points: "балл", unreachable: "жетпейді", stipMark: "стипендия",
+    fAdm: "Емтиханға жіберу: ЕЖР ≥ 50, әйтпесе лето", fRules: "Қорытынды < 50 → лето · Қорытынды < 70 → стипендиядан құлайды",
+    language: "Тіл", theme: "Тақырып", light: "Жарық", dark: "Қараңғы", system: "Жүйелік", color: "Негізгі түс",
+    colorNote: "Түс батырмаларға, 3D модельге және белгілерге қолданылады.", motion: "Анимация", show3d: "3D модельді көрсету",
+    days: ["Жексенбі","Дүйсенбі","Сейсенбі","Сәрсенбі","Бейсенбі","Жұма","Сенбі"], daysShort: ["Жс","Дс","Сс","Ср","Бс","Жм","Сб"],
+    months: ["қаңтар","ақпан","наурыз","сәуір","мамыр","маусым","шілде","тамыз","қыркүйек","қазан","қараша","желтоқсан"],
+    colors: { blue: "Шыны көк", navy: "Қою көк", sky: "Аспан", teal: "Көгілдір-жасыл", gold: "Алтын", slate: "Сұр" }
+  },
+  en: {
+    brand: "Student Hub", student: "Student", starosta: "Group leader", role: "Role", settings: "Settings", close: "Close",
+    sample: "sample data", heroTitle: "Your whole study day in one place",
+    heroSub: "Schedule, homework, course materials and exam admission maths. Showing sample data for group IS-23-2.",
+    stNext: "until next class", stHw: "homework left", stAdm: "subjects admitted", sections: "Sections",
+    tabSchedule: "Schedule", tabHomework: "Homework", tabSubjects: "Courses", tabInfo: "Help desk", tabDopusk: "Admission",
+    weekSchedule: "Weekly schedule", remind: "Reminder:", test: "Test", today: "today", noLessons: "No classes this day.",
+    nextLesson: "Next class", ongoing: "In progress", left: "left", toEnd: "Ends in", noWeek: "No classes in the coming week.",
+    remindOff: "Off", minBefore: "min before", remindMsg: "Class in {t}: {s}, {time}, {room}",
+    min: "min", hr: "h", day: "d", todayW: "Today",
+    newHw: "Post new homework", subject: "Course", due: "Due date", task: "Task", publish: "Publish", published: "Published. Your group can see it.",
+    hwPlaceholder: "e.g. Chapter 3, problems 12–18, solve in your notebook",
+    homework: "Homework", hideDone: "Hide completed", doneLbl: "Done", del: "Delete", wroteBy: "posted by", noHw: "No homework.",
+    overdue: "Overdue", dueToday: "Today", dueTomorrow: "Tomorrow", inDays: "in {n} days", you: "You (group leader)",
+    hwOpen: "{n} homework", allDone: "All done", teacher: "Lecturer",
+    lectures: "Lectures", tasks: "Assignments", links: "Links",
+    searchPh: "What are you looking for? e.g. certificate, dormitory, scholarship", notFound: "Nothing found for “{q}”. Contact the dean’s office: Main building, room 210.",
+    scoresTitle: "Enter your scores", tapRow: "Tap a row to see the full breakdown", admShort: "Adm.", exam: "Exam", final: "Final", status: "Status",
+    sumAdm: "Admitted", sumRisk: "Summer risk", sumStip: "Scholarship kept", sumLost: "Scholarship at risk",
+    stEmpty: "No scores", stNeedP2: "Need P2 ≥ {n}", stNoAdm: "Summer term", stAdmOk: "Admitted", stStip: "Scholarship", stPass: "Loses scholarship", stSummer: "Summer term",
+    admRating: "Exam admission rating", finalScore: "Final score",
+    needRk2: "To get admitted you need at least {n} on Midterm 2 (if TK2 = {tk2}).",
+    needP2: "To get admitted, P2 must be at least {n}. That means TK2 + RK2 ≥ {sum}.",
+    impossibleP2: "P1 is too low: even with P2 = 100 the admission rating stays under 50. Talk to your lecturer.",
+    admOk: "Admitted. You can sit the exam.", admFail: "Admission rating is below 50 ({d}). You can’t sit the exam and go to summer term. {m} points short.",
+    examFor: "Exam score needed for each grade", examNeed50: "To avoid summer term you need at least {n} on the exam.",
+    examNeed70: "To keep your scholarship (final ≥ 70) you need at least {n} on the exam.", examNo70: "A scholarship (≥ 70) is out of reach even with 100 on the exam.",
+    finStip: "Final {f}. Scholarship kept.", finPass: "Final {f}. Passed, but under 70: you lose the scholarship.", finSummer: "Final {f}. Under 50: summer term.",
+    enterFirst: "Enter TK1 and RK1 first. Then we work out what you need for admission and the exam.",
+    points: "pts", unreachable: "out of reach", stipMark: "scholarship",
+    fAdm: "Exam admission: rating ≥ 50, otherwise summer term", fRules: "Final < 50 → summer term · Final < 70 → scholarship lost",
+    language: "Language", theme: "Theme", light: "Light", dark: "Dark", system: "System", color: "Accent colour",
+    colorNote: "Used for buttons, the 3D model and highlights.", motion: "Motion", show3d: "Show 3D model",
+    days: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], daysShort: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+    months: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+    colors: { blue: "Glass blue", navy: "Navy", sky: "Sky", teal: "Teal", gold: "Gold", slate: "Slate" }
+  }
+};
+const t = (k, vars) => { let s = T[lang][k] ?? k; if (vars) for (const [a, b] of Object.entries(vars)) s = s.replaceAll("{" + a + "}", b); return s; };
+const L = (o) => (typeof o === "string" ? o : o[lang]);
+Object.assign(T.kk, {
+  tabSchedule: "Басты", unofficial: "Студенттік жоба. Университеттің ресми сайты емес.", photoAlt: "Астана Халықаралық Университетінің ғимараты",
+  heroToday: "Бүгін тағы {n} сабағыңыз бар", heroDone: "Бүгінгі сабақтар аяқталды", heroNone: "Бүгін сабақ жоқ",
+  heroNext: "Келесі: {s} · {time} · {room}", openWeek: "Апталық кесте", hwBtn: "Үй жұмысы · {n}",
+  nearTasks: "Жақын тапсырмалар", allTasks: "Барлық тапсырмалар", noOpen: "Орындалмаған тапсырма жоқ.", admCard: "Допуск жағдайы", admOpen: "Допуск есебі",
+  startsIn: "Басталуына", endsIn: "Аяқталуына", room: "Аудитория",
+  remindNote: "Ескерту осы бет ашық тұрғанда ғана, беттің ішінде шығады. Телефонға push-хабарлама әзірге жоқ.",
+  localNote: "Тапсырмалар әзірге тек осы құрылғыда сақталады. Староста жазғанды бүкіл топ көруі үшін ортақ сервер қосу керек.",
+  grpOverdue: "Мерзімі өткен", grpToday: "Бүгін", grpUpcoming: "Алдағы", grpDone: "Орындалған", doneChip: "Орындалды",
+  stNeedData: "Баға жетіспейді", missing: "Жетіспейді: {f}", details: "Толығы",
+  needP2: "Допуск үшін Р2 кемінде {n} болуы керек, яғни ТК2 + РК2 ≥ {sum}.",
+  impossibleP2: "Р2 = 100 болса да ЕЖР {adm}-ге жетпейді. Летоға қалу қаупі бар, оқытушымен сөйлесіңіз.",
+  admFail: "ЕЖР {adm}-ден төмен ({d}). Емтиханға жіберілмейсіз, летоға қаласыз. {m} балл жетпейді.",
+  examNeed50: "Летоға қалмау үшін (қорытынды ≥ {pass}) емтиханнан кемінде {n} балл керек.",
+  examNoPass: "Емтиханнан 100 алсаңыз да қорытынды {pass}-ге жетпейді.",
+  examNeed70: "Стипендияны сақтау үшін (қорытынды ≥ {stip}) емтиханнан кемінде {n} балл керек.",
+  examNo70: "Стипендияға (қорытынды ≥ {stip}) емтиханнан 100 алсаңыз да жетпейді.",
+  finPass: "Қорытынды {f}. Пәннен өттіңіз, бірақ {stip}-ден төмен, стипендиядан құлайсыз.",
+  finSummer: "Қорытынды {f}. {pass}-ден төмен, летоға қаласыз.",
+  examBelowMin: "Емтихан {e}, бұл сіз қойған емтихан шегінен ({m}) төмен. Летоға қаласыз.",
+  noExamMin: "Емтиханның жеке өту шегі белгісіз, сондықтан есепке алынбады. Біліп алсаңыз, «Бағалау ережелері» бөлімінде қосыңыз.",
+  examFor: "Әр бағаға емтиханнан қанша керек (әріптік шкала — болжам)",
+  rulesTitle: "Бағалау ережелері", rAdm: "Емтиханға жіберу (ЕЖР ≥)", rPass: "Пәннен өту (қорытынды ≥)", rStip: "Стипендия (қорытынды ≥)",
+  rWex: "Емтихан салмағы (0–1)", rExMin: "Емтиханның жеке шегі", unknown: "белгісіз", reset: "Әдепкіге қайтару", editRules: "Ережелерді өзгерту",
+  rulesNote: "Әдепкі мәндер — сіз айтқан ережелер. Университет ережесі басқаша болса, осы жерден өзгертіңіз. Бос қалған емтихан шегі есепке алынбайды.",
+  fGiven: "Қолданыстағы формула", fAssume: "Болжамдар мен белгісіздер",
+  fAdm: "Емтиханға жіберу: ЕЖР ≥ {adm}, әйтпесе лето", fRules: "Қорытынды < {pass} → лето · Қорытынды < {stip} → стипендиядан құлайды",
+  aLetters: "Әріптік баға шкаласы (A ≥ 95 … D ≥ 50) — болжам. Университетіңіздің шкаласымен салыстырыңыз.",
+  aRound: "Шекті мәндер дөңгелектенбей салыстырылады (49.5 < 50). Platonus дөңгелектеуі мүмкін, мысалы 42.5 → 43.",
+  aExMinUnknown: "Емтиханның жеке өту шегі белгісіз, есептелмейді.", aExMinSet: "Емтиханның жеке өту шегі: {m} (баптаудан қойылған)."
+});
+Object.assign(T.en, {
+  tabSchedule: "Home", unofficial: "Student project. Not the university’s official site.", photoAlt: "Astana International University building",
+  heroToday: "{n} more classes today", heroDone: "Today’s classes are over", heroNone: "No classes today",
+  heroNext: "Next: {s} · {time} · {room}", openWeek: "Weekly schedule", hwBtn: "Homework · {n}",
+  nearTasks: "Upcoming homework", allTasks: "All homework", noOpen: "No open homework.", admCard: "Exam admission", admOpen: "Admission maths",
+  startsIn: "Starts in", endsIn: "Ends in", room: "Room",
+  remindNote: "Reminders appear inside this page, only while it is open. Phone push notifications are not available yet.",
+  localNote: "Homework is saved on this device only for now. A shared server is needed for the whole group to see what the group leader posts.",
+  grpOverdue: "Overdue", grpToday: "Today", grpUpcoming: "Upcoming", grpDone: "Completed", doneChip: "Done",
+  stNeedData: "Scores missing", missing: "Missing: {f}", details: "Details",
+  needP2: "For admission, P2 must be at least {n}, so TK2 + RK2 ≥ {sum}.",
+  impossibleP2: "Even with P2 = 100 the admission rating stays under {adm}. Talk to your lecturer.",
+  admFail: "Admission rating is under {adm} ({d}). You can’t sit the exam and go to summer term. {m} points short.",
+  examNeed50: "To avoid summer term (final ≥ {pass}) you need at least {n} on the exam.",
+  examNoPass: "Even 100 on the exam won’t bring the final to {pass}.",
+  examNeed70: "To keep your scholarship (final ≥ {stip}) you need at least {n} on the exam.",
+  examNo70: "A scholarship (final ≥ {stip}) is out of reach even with 100 on the exam.",
+  finPass: "Final {f}. Passed, but under {stip}: you lose the scholarship.",
+  finSummer: "Final {f}. Under {pass}: summer term.",
+  examBelowMin: "Exam {e} is under the exam minimum you set ({m}). Summer term.",
+  noExamMin: "The exam’s own pass mark is unknown, so it isn’t applied. Add it under Grading rules once you know it.",
+  examFor: "Exam score needed for each grade (letter scale is an assumption)",
+  rulesTitle: "Grading rules", rAdm: "Exam admission (rating ≥)", rPass: "Pass (final ≥)", rStip: "Scholarship (final ≥)",
+  rWex: "Exam weight (0–1)", rExMin: "Exam pass mark", unknown: "unknown", reset: "Reset to defaults", editRules: "Edit rules",
+  rulesNote: "Defaults are the rules you gave. Change them here if your university differs. An empty exam pass mark is not applied.",
+  fGiven: "Current formula", fAssume: "Assumptions and unknowns",
+  fAdm: "Exam admission: rating ≥ {adm}, otherwise summer term", fRules: "Final < {pass} → summer term · Final < {stip} → scholarship lost",
+  aLetters: "Letter scale (A ≥ 95 … D ≥ 50) is an assumption. Check it against your university’s scale.",
+  aRound: "Thresholds are compared without rounding (49.5 < 50). Platonus may round, e.g. 42.5 → 43.",
+  aExMinUnknown: "Exam pass mark is unknown and not applied.", aExMinSet: "Exam pass mark: {m} (set in Settings)."
+});
+
+// ================= data (examples) =================
+const SUBJECTS = [
+  { id: "math", ab: "∫",  name: { kk: "Жоғары математика", en: "Calculus" }, teacher: "Абуталипов Е.С." },
+  { id: "prog", ab: "</>", name: { kk: "Бағдарламалау негіздері", en: "Programming Basics" }, teacher: "Анарбек Д.Ж." },
+  { id: "eng",  ab: "En", name: { kk: "Ағылшын тілі", en: "English" }, teacher: "Оразалиев К.У." },
+  { id: "hist", ab: "Қз", name: { kk: "Қазақстан тарихы", en: "History of Kazakhstan" }, teacher: "Омарұлы О." },
+  { id: "phys", ab: "Ф",  name: { kk: "Физика", en: "Physics" }, teacher: "Тыныкулова А.С." },
+  { id: "phil", ab: "Ph", name: { kk: "Философия", en: "Philosophy" }, teacher: "Некесова А.А." }
+];
+const subj = (id) => SUBJECTS.find((s) => s.id === id);
+const TYPES = { lec: { kk: "Дәріс", en: "Lecture" }, pr: { kk: "Практика", en: "Practice" }, lab: { kk: "Зертхана", en: "Lab" }, sem: { kk: "Семинар", en: "Seminar" }, con: { kk: "Консультация", en: "Office hours" } };
+const R = (kk, en) => ({ kk, en });
+const SCHEDULE = {
+  1: [["08:00","08:50","math","lec",R("204, Бас корпус","204, Main bldg")],["09:00","09:50","math","pr",R("312, Бас корпус","312, Main bldg")],["10:00","10:50","hist","lec",R("Акт залы","Assembly hall")],["11:00","11:50","eng","pr",R("415, Б корпус","415, Block B")]],
+  2: [["09:00","09:50","prog","lec",R("101, IT корпус","101, IT bldg")],["10:00","10:50","prog","lab",R("Комп. класс 3","Computer lab 3")],["12:00","12:50","phil","lec",R("204, Бас корпус","204, Main bldg")]],
+  3: [["08:00","08:50","phys","lec",R("Физика ауд. 1","Physics hall 1")],["09:00","09:50","phys","lab",R("Зертхана 214","Lab 214")],["11:00","11:50","eng","pr",R("415, Б корпус","415, Block B")]],
+  4: [["09:00","09:50","math","pr",R("312, Бас корпус","312, Main bldg")],["10:00","10:50","prog","lab",R("Комп. класс 3","Computer lab 3")],["11:00","11:50","hist","sem",R("118, Бас корпус","118, Main bldg")]],
+  5: [["08:00","08:50","phil","sem",R("221, Бас корпус","221, Main bldg")],["09:00","09:50","phys","pr",R("Физика ауд. 2","Physics hall 2")],["10:00","10:50","eng","pr",R("415, Б корпус","415, Block B")]],
+  6: [["10:00","10:50","prog","con",R("Комп. класс 3","Computer lab 3")]]
+};
+const MATERIALS = {
+  math: { lec: [[R("1. Шектер және үзіліссіздік","1. Limits and continuity"),"PDF · 2.1 MB"],[R("2. Туынды","2. Derivatives"),"PDF · 3.4 MB"],[R("3. Анықталмаған интеграл","3. Indefinite integrals"),R("Слайд · 28 бет","Slides · 28 p.")]],
+          task: [[R("ӨЖ-1: Шектерді есептеу","SIW-1: Computing limits"),R("3-апта","Week 3")],[R("ӨЖ-2: Туынды","SIW-2: Derivatives"),R("6-апта","Week 6")]],
+          links: [[R("Есептер жинағы","Problem book"),R("Электронды кітапхана","E-library")],["Khan Academy: Calculus","khanacademy.org"]] },
+  prog: { lec: [[R("1. Python-ға кіріспе","1. Intro to Python"),R("Слайд · 34 бет","Slides · 34 p.")],[R("2. Шарттар мен циклдар","2. Conditions and loops"),R("Слайд · 30 бет","Slides · 30 p.")]],
+          task: [[R("Зертханалық №3: Функциялар","Lab 3: Functions"),R("GitHub арқылы","Submit via GitHub")],[R("Жоба: Консоль ойыны","Project: Console game"),R("12-апта","Week 12")]],
+          links: [[R("Python құжаттамасы","Python docs"),"docs.python.org"]] },
+  eng:  { lec: [["Unit 1: Academic introductions","Audio + PDF"],["Unit 2: Presentations","PDF"]],
+          task: [["Writing: Opinion essay",R("250 сөз","250 words")],["Speaking: 3-min talk",R("8-апта","Week 8")]],
+          links: [["Cambridge Dictionary","dictionary.cambridge.org"]] },
+  hist: { lec: [[R("1. Ежелгі Қазақстан","1. Ancient Kazakhstan"),"PDF · 1.2 MB"],[R("2. Түркі қағанаты","2. The Turkic Khaganate"),"PDF · 1.5 MB"]],
+          task: [[R("Эссе: Ұлы Жібек жолы","Essay: The Great Silk Road"),R("1500 сөз","1500 words")]],
+          links: [["e-history.kz",R("Тарих порталы","History portal")]] },
+  phys: { lec: [[R("1. Кинематика","1. Kinematics"),"PDF · 1.8 MB"],[R("2. Ньютон заңдары","2. Newton’s laws"),"PDF · 2.2 MB"]],
+          task: [[R("Зертханалық №1: Маятник","Lab 1: Pendulum"),R("4-апта","Week 4")]],
+          links: [[R("PhET симуляциялары","PhET simulations"),"phet.colorado.edu"]] },
+  phil: { lec: [[R("1. Философия пәні","1. What is philosophy"),"PDF · 0.9 MB"],[R("2. Әл-Фараби","2. Al-Farabi"),"PDF · 1.1 MB"]],
+          task: [[R("Абай, «Қара сөздер»: 1, 7, 38","Abai, Book of Words: 1, 7, 38"),R("Семинарға","For seminar")]],
+          links: [[R("Абай. Қара сөздер","Abai. Book of Words"),R("Кітапхана","Library")]] }
+};
+const INFO = [
+  [R("Анықтама (справка) алу","Getting a certificate"), "справка certificate анықтама", R("Оқу орнынан анықтаманы деканаттан немесе Platonus жүйесінен онлайн сұратасыз. Дайын болу мерзімі 1–2 жұмыс күні.","Request a certificate of enrolment from the dean’s office or online in Platonus. It is ready in 1–2 working days.")],
+  [R("Деканат","Dean’s office"), "dean деканат", R("Бас корпус, 2-қабат, 210-кабинет. Дс–Жм 09:00–18:00, түскі үзіліс 13:00–14:00.","Main building, 2nd floor, room 210. Mon–Fri 09:00–18:00, lunch 13:00–14:00.")],
+  [R("Стипендия","Scholarship"), "stipend стипендия", R("Стипендия әр пәннен қорытынды бағасы 70-тен жоғары грант иегерлеріне беріледі. Бір пәннен 70-тен төмен алсаңыз, стипендиядан құлайсыз.","Grant students keep the scholarship when every final score is 70 or higher. One final under 70 means losing it.")],
+  [R("Жатақхана","Dormitory"), "dorm жатақхана", R("Орын сұрау өтінішін студенттер бөліміне жазасыз. Басымдық: бірінші курс, әлеуметтік санат, алыс өңірден келгендер.","Apply to the student affairs office. Priority goes to first-years, social categories and students from distant regions.")],
+  [R("Жазғы семестр (лето)","Summer term"), "лето summer retake ретейк", R("ЕЖР 50-ден төмен болса немесе қорытынды 50-ден төмен болса, пәнді жазғы семестрде ақылы түрде қайта оқисыз. Өтінішті офис-регистраторға жазасыз.","If your admission rating or final score is under 50, you retake the course in the paid summer term. Apply at the registrar’s office.")],
+  [R("Кітапхана","Library"), "library кітапхана", R("Бас корпус, 1-қабат. Дс–Сб 09:00–19:00. Электронды кітапханаға студенттік ID арқылы кіресіз.","Main building, 1st floor. Mon–Sat 09:00–19:00. Sign in to the e-library with your student ID.")]
+];
+const TABS = [
+  ["schedule", "tabSchedule", '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>'],
+  ["homework", "tabHomework", '<path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 13l2 2 4-4"/>'],
+  ["subjects", "tabSubjects", '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/>'],
+  ["info", "tabInfo", '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>'],
+  ["dopusk", "tabDopusk", '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/>']
+];
+
+// ================= settings: theme, colour, language =================
+const ACCENTS = { blue: "#1f5fbf", navy: "#26338f", sky: "#0284c7", teal: "#0f8b8d", gold: "#a8741c", slate: "#475569" };
+const ACCENTS_DARK = { blue: "#5b93f5", navy: "#8d9cf5", sky: "#38bdf8", teal: "#2cc4c0", gold: "#e6b45a", slate: "#9fb0c6" };
+let settings = Object.assign({ mode: "system", accent: "blue" }, store.get("uni2.settings", {}));
+if (!(settings.accent in ACCENTS)) settings.accent = "blue";
+const isDark = () => settings.mode === "dark" || (settings.mode === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+function applySettings() {
+  const root = document.documentElement;
+  if (settings.mode === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", settings.mode);
+  root.style.setProperty("--accent", (isDark() ? ACCENTS_DARK : ACCENTS)[settings.accent]);
+  $$("[data-mode]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === settings.mode));
+  $$(".sw").forEach((b) => b.setAttribute("aria-pressed", b.dataset.c === settings.accent));
+  store.set("uni2.settings", settings);
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applySettings);
+$("#swatches").innerHTML = Object.entries(ACCENTS).map(([k, c]) => `<button class="sw" data-c="${k}" style="--c:${c}"></button>`).join("");
+$$(".sw").forEach((b) => b.onclick = () => { settings.accent = b.dataset.c; applySettings(); });
+$$("[data-mode]").forEach((b) => b.onclick = () => { settings.mode = b.dataset.mode; applySettings(); });
+function openSettings(open) { $("#drawer").hidden = !open; $("#scrim").hidden = !open; if (open) $("#close-settings").focus(); }
+$("#open-settings").onclick = () => openSettings(true);
+$("#close-settings").onclick = () => openSettings(false);
+$("#scrim").onclick = () => openSettings(false);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") openSettings(false); });
+
+function setLang(l) { lang = l; store.set("uni2.lang", l); document.documentElement.lang = l === "kk" ? "kk" : "en"; renderAll(); }
+$$("[data-lang]").forEach((b) => b.onclick = () => setLang(b.dataset.lang));
+$("#lang-quick").onclick = () => setLang(lang === "kk" ? "en" : "kk");
+
+// ================= 3D button feedback (ripple + held colour) =================
+document.addEventListener("pointerdown", (e) => {
+  const b = e.target.closest(".b3"); if (!b) return;
+  b.classList.add("pressed");
+  const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height);
+  const sp = document.createElement("span"); sp.className = "ripple";
+  sp.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+  b.appendChild(sp); setTimeout(() => sp.remove(), 600);
+});
+const release = () => setTimeout(() => $$(".b3.pressed").forEach((b) => b.classList.remove("pressed")), 160);
+document.addEventListener("pointerup", release); document.addEventListener("pointercancel", release);
+
+// card tilt
+if (!reduceMotion && matchMedia("(pointer: fine)").matches) {
+  document.addEventListener("pointermove", (e) => {
+    const c = e.target.closest(".tilt"); $$(".tilt").forEach((x) => { if (x !== c) x.style.transform = ""; });
+    if (!c) return;
+    const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    c.style.transform = `perspective(900px) rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 8).toFixed(2)}deg) translateZ(0)`;
+  });
+}
+
+// ================= tabs =================
+let curTab = "schedule";
+function renderTabs() {
+  $("#tabs").innerHTML = TABS.map(([id, key, svg]) =>
+    `<button class="b3" data-tab="${id}" aria-pressed="${id === curTab}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>${t(key)}</button>`).join("");
+  $("#bnav").innerHTML = TABS.map(([id, key, svg]) =>
+    `<button class="bn" data-tab="${id}" aria-current="${id === curTab ? "page" : "false"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg><span>${t(key)}</span></button>`).join("");
+  $$("[data-tab]").forEach((b) => b.onclick = () => { showTab(b.dataset.tab); scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" }); });
+}
+function showTab(id) {
+  if (!TABS.some((x) => x[0] === id)) id = "schedule";
+  curTab = id;
+  TABS.forEach(([x]) => { $("#p-" + x).hidden = x !== id; });
+  $$("[data-tab]").forEach((b) => b.classList.contains("bn")
+    ? b.setAttribute("aria-current", b.dataset.tab === id ? "page" : "false")
+    : b.setAttribute("aria-pressed", b.dataset.tab === id));
+  try { history.replaceState(null, "", "#" + id); } catch {}
+}
+addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+
+// ================= role =================
+let role = store.get("uni2.role", "student");
+function setRole(r) {
+  role = r; store.set("uni2.role", r);
+  $("#role-student").setAttribute("aria-pressed", r === "student");
+  $("#role-starosta").setAttribute("aria-pressed", r === "starosta");
+  $("#hw-form-box").hidden = r !== "starosta";
+  renderHomework();
+}
+$("#role-student").onclick = () => setRole("student");
+$("#role-starosta").onclick = () => setRole("starosta");
+
+// ================= 1. schedule =================
+const toMin = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+let selDay = new Date().getDay() || 1;
+function nextLesson(now = new Date()) {
+  for (let add = 0; add < 8; add++) {
+    const d = new Date(now); d.setDate(d.getDate() + add);
+    const nowMin = add === 0 ? now.getHours() * 60 + now.getMinutes() : -1;
+    for (const l of SCHEDULE[d.getDay()] || []) {
+      if (add === 0 && toMin(l[1]) <= nowMin) continue;
+      const start = new Date(d); start.setHours(...l[0].split(":").map(Number), 0, 0);
+      const end = new Date(d); end.setHours(...l[1].split(":").map(Number), 0, 0);
+      return { l, start, end, ongoing: add === 0 && toMin(l[0]) <= nowMin };
+    }
+  }
+  return null;
+}
+function fmtLeft(ms) {
+  const m = Math.max(0, Math.round(ms / 60000));
+  if (m < 60) return `${m} ${t("min")}`;
+  const h = Math.floor(m / 60), r = m % 60;
+  if (h < 24) return `${h} ${t("hr")}${r ? " " + r + " " + t("min") : ""}`;
+  return `${Math.floor(h / 24)} ${t("day")} ${h % 24} ${t("hr")}`;
+}
+function renderNext() {
+  const n = nextLesson(), box = $("#next-box");
+  if (!n) { box.innerHTML = `<p>${t("noWeek")}</p>`; return; }
+  const [s, e, id, type, room] = n.l;
+  const dayLabel = n.start.toDateString() === new Date().toDateString() ? t("todayW") : t("days")[n.start.getDay()];
+  const leftMs = n.ongoing ? n.end - new Date() : n.start - new Date();
+  box.innerHTML = `
+    <span class="label">${n.ongoing ? t("ongoing") : t("nextLesson")}</span>
+    <div class="next-grid">
+      <div class="nx-time"><b>${s}–${e}</b><span class="muted small">${dayLabel}</span></div>
+      <div class="nx-left"><span class="muted small">${n.ongoing ? t("endsIn") : t("startsIn")}</span><b>${fmtLeft(leftMs)}</b></div>
+    </div>
+    <h2>${esc(L(subj(id).name))} <span class="muted" style="font-weight:500">· ${esc(L(TYPES[type]))}</span></h2>
+    <div class="row"><span class="room-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${t("room")}: ${esc(L(room))}</span><span class="small muted">${esc(subj(id).teacher)}</span></div>`;
+}
+function renderDays() {
+  const today = new Date().getDay();
+  $("#days").innerHTML = [1,2,3,4,5,6].map((d) =>
+    `<button class="b3 sm" data-d="${d}" aria-pressed="${d === selDay}">${t("daysShort")[d]}${d === today ? " · " + t("today") : ""}</button>`).join("");
+  $$("#days button").forEach((b) => b.onclick = () => { selDay = +b.dataset.d; renderDays(); renderLessons(); });
+}
+function renderLessons() {
+  const list = SCHEDULE[selDay] || [];
+  const isToday = selDay === new Date().getDay();
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  $("#lessons").innerHTML = list.length ? list.map(([s, e, id, type, room]) => {
+    const cls = !isToday ? "" : toMin(e) <= nowMin ? "past" : toMin(s) <= nowMin ? "now" : "";
+    return `<div class="lesson ${cls}"><span class="t">${s}–${e}</span>
+      <div style="min-width:0"><strong>${esc(L(subj(id).name))}</strong><div class="small muted">${esc(L(TYPES[type]))} · ${esc(subj(id).teacher)}</div></div>
+      <div class="room">${esc(L(room))}</div></div>`;
+  }).join("") : `<p class="muted" style="padding:12px 0">${t("noLessons")}</p>`;
+}
+const remindSel = $("#remind-min");
+function renderRemindOptions() {
+  const v = String(store.get("uni2.remind", 10));
+  remindSel.innerHTML = [5, 10, 15, 30].map((m) => `<option value="${m}">${m} ${t("minBefore")}</option>`).join("") + `<option value="0">${t("remindOff")}</option>`;
+  remindSel.value = v;
+}
+remindSel.onchange = () => store.set("uni2.remind", +remindSel.value);
+const shown = new Set();
+function toast(text) { $("#toast-text").textContent = text; $("#toast").hidden = false; }
+$("#toast-close").onclick = () => { $("#toast").hidden = true; };
+const reminderText = (n) => t("remindMsg", { t: fmtLeft(n.start - new Date()), s: L(subj(n.l[2]).name), time: n.l[0], room: L(n.l[4]) });
+function checkReminder() {
+  const mins = +remindSel.value, n = nextLesson();
+  if (!mins || !n || n.ongoing) return;
+  const key = n.start.toISOString(), left = (n.start - new Date()) / 60000;
+  if (left <= mins && left > 0 && !shown.has(key)) { shown.add(key); toast(reminderText(n)); }
+}
+$("#test-remind").onclick = () => { const n = nextLesson(); if (n) toast(reminderText(n)); };
+
+// ================= 2. homework =================
+const iso = (d) => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); };
+const plus = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return iso(d); };
+let HW = store.get("uni2.hw", null) || [
+  { id: 1, subj: "math", text: "№4 практикалық: 112–120 есептер (туынды). Дәптерге шығарып әкелу.", due: plus(1), by: "Айдана" },
+  { id: 2, subj: "prog", text: "Зертханалық №3: функциялар. Кодты GitHub-қа жүктеп, сілтемесін Platonus-қа салу.", due: plus(3), by: "Айдана" },
+  { id: 3, subj: "eng", text: "Unit 2, ex. 5 + 250-word essay “My future profession”.", due: plus(5), by: "Айдана" },
+  { id: 4, subj: "hist", text: "Семинарға: Түркі қағанаты, 3 сұраққа конспект.", due: plus(-1), by: "Айдана" }
+];
+let DONE = new Set(store.get("uni2.hw.done", [4]));
+$("#hw-due").value = plus(2);
+$("#hw-hide-done").checked = store.get("uni2.hw.hide", false);
+$("#hw-hide-done").onchange = (e) => { store.set("uni2.hw.hide", e.target.checked); renderHomework(); };
+function dueChip(due) {
+  const days = Math.round((new Date(due + "T00:00") - new Date(iso(new Date()) + "T00:00")) / 864e5);
+  if (days < 0) return `<span class="pill bad">${t("overdue")}</span>`;
+  if (days === 0) return `<span class="pill warn">${t("dueToday")}</span>`;
+  if (days === 1) return `<span class="pill warn">${t("dueTomorrow")}</span>`;
+  return `<span class="pill idle">${t("inDays", { n: days })}</span>`;
+}
+function renderHomework() {
+  const hide = $("#hw-hide-done").checked, today = iso(new Date());
+  const sorted = [...HW].sort((a, b) => a.due.localeCompare(b.due));
+  const open = sorted.filter((h) => !DONE.has(h.id));
+  const groups = [
+    ["grpOverdue", "bad", open.filter((h) => h.due < today)],
+    ["grpToday", "warn", open.filter((h) => h.due === today)],
+    ["grpUpcoming", "info", open.filter((h) => h.due > today)],
+    ["grpDone", "ok", hide ? [] : sorted.filter((h) => DONE.has(h.id)).reverse()]
+  ].filter((g) => g[2].length);
+  $("#hw-list").innerHTML = groups.length ? groups.map(([k, cls, items]) =>
+    `<section class="hw-group"><h3>${t(k)} <span class="pill ${cls}">${items.length}</span></h3>${items.map(hwItem).join("")}</section>`).join("")
+    : `<p class="muted" style="padding:12px 0">${t("noHw")}</p>`;
+  bindHomework();
+}
+function hwItem(h) {
+  const done = DONE.has(h.id);
+  return `
+    <div class="hw ${done ? "done" : ""}">
+      <div class="row"><strong>${esc(L(subj(h.subj).name))}</strong>${done ? `<span class="pill ok">${t("doneChip")}</span>` : dueChip(h.due)}</div>
+      <p class="text">${esc(h.text)}</p>
+      <div class="row between small muted">
+        <span>${t("due")}: <span class="num">${h.due.split("-").reverse().join(".")}</span> · ${t("wroteBy")}: ${esc(h.mine ? t("you") : h.by)}</span>
+        <span class="row">
+          <label class="check"><input type="checkbox" data-id="${h.id}" ${DONE.has(h.id) ? "checked" : ""}> ${t("doneLbl")}</label>
+          ${role === "starosta" ? `<button class="b3 sm" data-del="${h.id}">${t("del")}</button>` : ""}
+        </span>
+      </div>
+    </div>`;
+}
+function bindHomework() {
+  $$("#hw-list input[data-id]").forEach((c) => c.onchange = () => {
+    const id = +c.dataset.id; c.checked ? DONE.add(id) : DONE.delete(id);
+    store.set("uni2.hw.done", [...DONE]); renderHomework(); renderSubjects(); renderStats();
+  });
+  $$("#hw-list [data-del]").forEach((b) => b.onclick = () => {
+    HW = HW.filter((h) => h.id !== +b.dataset.del); store.set("uni2.hw", HW); renderHomework(); renderSubjects(); renderStats();
+  });
+}
+$("#hw-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("#hw-text").value.trim(); if (!text) return;
+  HW.push({ id: Date.now(), subj: $("#hw-subj").value, text, due: $("#hw-due").value, by: "", mine: true });
+  store.set("uni2.hw", HW);
+  $("#hw-text").value = ""; $("#hw-saved").hidden = false; setTimeout(() => { $("#hw-saved").hidden = true; }, 2500);
+  renderHomework(); renderSubjects(); renderStats();
+});
+
+// ================= 3. subjects =================
+let selSubj = "math";
+function renderSubjects() {
+  $("#subj-grid").innerHTML = SUBJECTS.map((s) => {
+    const open = HW.filter((h) => h.subj === s.id && !DONE.has(h.id)).length;
+    return `<button class="b3 subj-card" data-s="${s.id}" aria-pressed="${s.id === selSubj}">
+      <span class="ico">${esc(s.ab)}</span>
+      <span>${esc(L(s.name))}</span><span class="meta">${esc(s.teacher)}</span>
+      <span>${open ? `<span class="pill warn">${t("hwOpen", { n: open })}</span>` : `<span class="pill ok">${t("allDone")}</span>`}</span>
+    </button>`;
+  }).join("");
+  $$(".subj-card").forEach((b) => b.onclick = () => { selSubj = b.dataset.s; renderSubjects(); });
+  const m = MATERIALS[selSubj], s = subj(selSubj);
+  const col = (title, arr) => `<div><span class="label">${title}</span><ul>${arr.map(([a, b]) => `<li>${esc(L(a))}<span class="muted">${esc(L(b))}</span></li>`).join("")}</ul></div>`;
+  $("#subj-detail").innerHTML = `
+    <div class="row between" style="margin-bottom:14px"><h2>${esc(L(s.name))}</h2><span class="small muted">${t("teacher")}: ${esc(s.teacher)}</span></div>
+    <div class="mat-cols">${col(t("lectures"), m.lec)}${col(t("tasks"), m.task)}${col(t("links"), m.links)}</div>`;
+}
+
+// ================= 4. info =================
+$("#info-q").oninput = () => renderInfo();
+function renderInfo(openIdx) {
+  $("#info-q").placeholder = t("searchPh");
+  $("#info-quick").innerHTML = INFO.slice(0, 5).map(([title], i) => `<button class="b3 sm" data-q="${i}">${esc(L(title))}</button>`).join("");
+  $$("#info-quick button").forEach((b) => b.onclick = () => { $("#info-q").value = ""; renderInfo(+b.dataset.q); });
+  const q = $("#info-q").value.trim().toLowerCase();
+  const items = INFO.map((x, i) => [...x, i]).filter(([title, kw, body]) => !q || (title.kk + title.en + kw + body.kk + body.en).toLowerCase().includes(q));
+  $("#info-list").innerHTML = items.length ? items.map(([title, , body, i]) =>
+    `<details class="faq" ${openIdx === i || (q && items.length <= 2) ? "open" : ""}><summary>${esc(L(title))}</summary><div class="body">${esc(L(body))}</div></details>`).join("")
+    : `<p class="muted">${esc(t("notFound", { q }))}</p>`;
+}
+
+// ================= 5. dopusk calculator =================
+// P1 = (ТК1 + РК1)/2, P2 = (ТК2 + РК2)/2, ЕЖР = (P1 + P2)/2, Final = (1 − w)·ЕЖР + w·Exam
+// Empty input = no score yet (null), never 0. Thresholds live in RULES and can be changed in Settings.
+const DEFAULT_RULES = { adm: 50, pass: 50, stip: 70, wex: 0.4, exmin: null };
+let RULES = Object.assign({}, DEFAULT_RULES, store.get("uni2.rules", {}));
+const GRADES = [["A",95],["A−",90],["B+",85],["B",80],["B−",75],["C+",70],["C",65],["C−",60],["D+",55],["D",50]]; // assumption, see aLetters
+const FIELDS = ["tk1","rk1","tk2","rk2","ex"];
+const fieldName = (f) => ({ tk1: "ТК1", rk1: "РК1", tk2: "ТК2", rk2: "РК2", ex: t("exam") }[f]);
+let SCORES = store.get("uni2.scores", null) || {
+  math: { tk1: 90,    rk1: 80, tk2: null, rk2: null, ex: null },
+  prog: { tk1: 85.8,  rk1: 86, tk2: 88,   rk2: 75,   ex: null },
+  eng:  { tk1: 89.89, rk1: 90, tk2: null, rk2: null, ex: null },
+  hist: { tk1: 94.58, rk1: 95, tk2: 80,   rk2: 85,   ex: 40 },
+  phys: { tk1: 89.83, rk1: 70, tk2: 92,   rk2: 90,   ex: 88 },
+  phil: { tk1: 30,    rk1: 20, tk2: 40,   rk2: null, ex: null }
+};
+let selD = "prog";
+const avg = (a, b) => (a == null || b == null ? null : (a + b) / 2);
+const fmt = (x) => (x == null ? "—" : (Math.round(x * 100) / 100).toString());
+const ceil1 = (x) => Math.ceil(x * 10 - 1e-9) / 10;
+
+function calc(s) {
+  const P1 = avg(s.tk1, s.rk1), P2 = avg(s.tk2, s.rk2);
+  const D = P1 != null && P2 != null ? (P1 + P2) / 2 : null;
+  const admitted = D != null && D >= RULES.adm;
+  const F = admitted && s.ex != null ? (1 - RULES.wex) * D + RULES.wex * s.ex : null;
+  const examFail = F != null && RULES.exmin != null && s.ex < RULES.exmin;
+  const missing = [];
+  if (P1 == null) ["tk1", "rk1"].forEach((f) => s[f] == null && missing.push(f));
+  if (P2 == null) ["tk2", "rk2"].forEach((f) => s[f] == null && missing.push(f));
+  if ((D == null || admitted) && s.ex == null) missing.push("ex");
+  let state;
+  if (P1 == null) state = "empty";
+  else if (D == null) state = "needP2";
+  else if (!admitted) state = "noadm";
+  else if (F == null) state = "adm";
+  else if (examFail || F < RULES.pass) state = "summer";
+  else state = F >= RULES.stip ? "stip" : "pass";
+  return { P1, P2, D, F, state, missing, examFail, needP2: P1 != null ? Math.max(0, 2 * RULES.adm - P1) : null };
+}
+const examFor = (D, target) => Math.max(RULES.exmin ?? 0, ceil1((target - (1 - RULES.wex) * D) / RULES.wex));
+
+function statusPill(c) {
+  return {
+    empty: `<span class="pill idle">${t("stNeedData")}</span>`,
+    needP2: c.needP2 > 100 ? `<span class="pill bad">${t("stNoAdm")}</span>` : `<span class="pill info">${t("stNeedP2", { n: fmt(ceil1(c.needP2)) })}</span>`,
+    noadm: `<span class="pill bad">${t("stNoAdm")}</span>`,
+    adm: `<span class="pill ok">${t("stAdmOk")}</span>`,
+    stip: `<span class="pill ok">${t("stStip")}</span>`,
+    pass: `<span class="pill warn">${t("stPass")}</span>`,
+    summer: `<span class="pill bad">${t("stSummer")}</span>`
+  }[c.state];
+}
+const missingText = (c) => (c.missing.length ? t("missing", { f: c.missing.map(fieldName).join(", ") }) : "");
+
+function renderDopuskTable() {
+  SUBJECTS.forEach((s) => { SCORES[s.id] = SCORES[s.id] || { tk1: null, rk1: null, tk2: null, rk2: null, ex: null }; });
+  const inp = (s, f, pre) => `<input id="${pre}${f}-${s.id}" inputmode="decimal" data-s="${s.id}" data-f="${f}" value="${SCORES[s.id][f] ?? ""}" placeholder="—" aria-label="${esc(L(s.name))} ${esc(fieldName(f))}">`;
+  $("#dt-body").innerHTML = SUBJECTS.map((s) => `<tr data-s="${s.id}">
+      <td><strong>${esc(L(s.name))}</strong></td>
+      <td>${inp(s, "tk1", "")}</td><td>${inp(s, "rk1", "")}</td><td class="calc" data-c="P1"></td>
+      <td>${inp(s, "tk2", "")}</td><td>${inp(s, "rk2", "")}</td><td class="calc" data-c="P2"></td>
+      <td class="calc strong" data-c="D"></td><td>${inp(s, "ex", "")}</td><td class="calc strong" data-c="F"></td>
+      <td><div data-c="st"></div><div class="missing small" data-c="miss"></div></td></tr>`).join("");
+  $("#d-cards").innerHTML = SUBJECTS.map((s) => `<div class="box dcard" data-card="${s.id}">
+      <div class="row between"><strong>${esc(L(s.name))}</strong><span data-c="st"></span></div>
+      <div class="ins">${FIELDS.map((f) => `<label for="c-${f}-${s.id}">${esc(fieldName(f))}${inp(s, f, "c-")}</label>`).join("")}</div>
+      <div class="outs"><div><b data-c="P1"></b><span>Р1</span></div><div><b data-c="P2"></b><span>Р2</span></div><div><b data-c="D"></b><span>${t("admShort")}</span></div><div><b data-c="F"></b><span>${t("final")}</span></div></div>
+      <div class="row between"><span class="missing" data-c="miss"></span><button class="b3 sm" data-detail="${s.id}">${t("details")}</button></div>
+    </div>`).join("");
+  SUBJECTS.forEach((s) => updateRow(s.id));
+  markSel();
+  $$("#dt-body tr").forEach((tr) => tr.addEventListener("click", () => { if (selD !== tr.dataset.s) { selD = tr.dataset.s; markSel(); renderDopuskDetail(); } }));
+  $$("[data-detail]").forEach((b) => b.onclick = () => {
+    selD = b.dataset.detail; markSel(); renderDopuskDetail();
+    $("#d-detail").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  });
+  $$("#dt-body input, #d-cards input").forEach((el) => el.oninput = () => {
+    const v = el.value.replace(",", ".").replace(/[^\d.]/g, "");
+    let n = v === "" ? null : Number(v);
+    if (n != null && Number.isNaN(n)) n = null;
+    if (n != null) n = Math.min(100, Math.max(0, n));
+    const { s, f } = el.dataset;
+    SCORES[s][f] = n;
+    store.set("uni2.scores", SCORES);
+    $$(`input[data-s="${s}"][data-f="${f}"]`).forEach((x) => { if (x !== el) x.value = el.value; });
+    selD = s; updateRow(s); markSel(); renderDopuskDetail(); renderDSum(); renderStats();
+  });
+}
+function updateRow(id) {
+  const c = calc(SCORES[id]);
+  [document.querySelector(`#dt-body tr[data-s="${id}"]`), document.querySelector(`[data-card="${id}"]`)].forEach((el) => {
+    if (!el) return;
+    el.querySelector('[data-c="P1"]').textContent = fmt(c.P1);
+    el.querySelector('[data-c="P2"]').textContent = fmt(c.P2);
+    el.querySelector('[data-c="D"]').textContent = fmt(c.D);
+    el.querySelector('[data-c="F"]').textContent = fmt(c.F);
+    el.querySelector('[data-c="st"]').innerHTML = statusPill(c);
+    el.querySelector('[data-c="miss"]').textContent = missingText(c);
+  });
+}
+function markSel() {
+  $$("#dt-body tr").forEach((tr) => tr.classList.toggle("sel", tr.dataset.s === selD));
+  $$(".dcard").forEach((c) => c.classList.toggle("sel", c.dataset.card === selD));
+}
+
+function ring(value, label, lo, hi) {
+  const R0 = 80, C = 2 * Math.PI * R0, v = value == null ? 0 : Math.max(0, Math.min(100, value));
+  const color = value == null ? "var(--line)" : value >= hi ? "var(--ok)" : value >= lo ? "var(--warn)" : "var(--bad)";
+  const tick = (p) => { const a = (p / 100) * 2 * Math.PI - Math.PI / 2; return `<line class="tick" x1="${100 + Math.cos(a) * 68}" y1="${100 + Math.sin(a) * 68}" x2="${100 + Math.cos(a) * 92}" y2="${100 + Math.sin(a) * 92}" stroke-width="2"/>`; };
+  return `<svg class="ring" viewBox="0 0 200 200" role="img" aria-label="${esc(label)} ${fmt(value)}">
+    <circle class="track" cx="100" cy="100" r="${R0}" fill="none" stroke-width="16"/>
+    <circle class="arc" cx="100" cy="100" r="${R0}" fill="none" stroke-width="16" stroke-linecap="round"
+      style="stroke:${color};stroke-dasharray:${(v / 100) * C} ${C}" transform="rotate(-90 100 100)"/>
+    ${tick(lo)}${hi !== lo ? tick(hi) : ""}
+    <text x="100" y="104" text-anchor="middle" font-size="34" font-weight="700">${value == null ? "—" : fmt(Math.round(value * 10) / 10)}</text>
+    <text class="sub" x="100" y="128" text-anchor="middle">${esc(label)}</text>
+  </svg>`;
+}
+function renderDopuskDetail() {
+  const s = subj(selD), sc = SCORES[selD], c = calc(sc);
+  const w = RULES.wex, wd = Math.round((1 - w) * 100) / 100;
+  const step = (k, label, v) => `<div class="step"><span class="k">${k}</span><span>${label}</span><span class="v">${fmt(v)}</span></div>`;
+  const msgs = [];
+  let extra = "";
+  if (c.missing.length) msgs.push(["warn", missingText(c)]);
+  if (c.state === "needP2") {
+    if (c.needP2 > 100) msgs.push(["bad", t("impossibleP2", { adm: RULES.adm })]);
+    else {
+      msgs.push(["info", t("needP2", { n: fmt(ceil1(c.needP2)), sum: fmt(ceil1(c.needP2 * 2)) })]);
+      if (sc.tk2 != null && sc.rk2 == null) {
+        const r2 = ceil1(2 * c.needP2 - sc.tk2);
+        msgs.push(r2 > 100 ? ["bad", t("impossibleP2", { adm: RULES.adm })] : ["info", t("needRk2", { n: fmt(Math.max(0, r2)), tk2: fmt(sc.tk2) })]);
+      }
+    }
+  }
+  if (c.state === "noadm") msgs.push(["bad", t("admFail", { adm: RULES.adm, d: fmt(c.D), m: fmt(Math.round((RULES.adm - c.D) * 100) / 100) })]);
+  if (c.D != null && c.D >= RULES.adm) {
+    if (c.F == null) {
+      msgs.push(["ok", t("admOk")]);
+      const ep = examFor(c.D, RULES.pass), es = examFor(c.D, RULES.stip);
+      msgs.push(ep > 100 ? ["bad", t("examNoPass", { pass: RULES.pass })] : ["warn", t("examNeed50", { n: fmt(ep), pass: RULES.pass })]);
+      msgs.push(es > 100 ? ["bad", t("examNo70", { stip: RULES.stip })] : ["info", t("examNeed70", { n: fmt(es), stip: RULES.stip })]);
+    } else {
+      const f = fmt(Math.round(c.F * 100) / 100);
+      if (c.examFail) msgs.push(["bad", t("examBelowMin", { e: fmt(sc.ex), m: RULES.exmin })]);
+      else msgs.push(c.state === "stip" ? ["ok", t("finStip", { f })] : c.state === "pass" ? ["warn", t("finPass", { f, stip: RULES.stip })] : ["bad", t("finSummer", { f, pass: RULES.pass })]);
+    }
+    if (RULES.exmin == null) msgs.push(["info", t("noExamMin")]);
+    extra = `<div style="display:grid;gap:10px;margin-top:20px">
+      <span class="label">${t("examFor")}</span>
+      <div class="grades">${GRADES.map(([g, T0]) => {
+        const E = examFor(c.D, T0);
+        return E > 100 ? `<div class="grade no"><span class="g">${g}</span><span class="small muted">≥${T0} · ${t("unreachable")}</span></div>`
+          : `<div class="grade ${T0 >= RULES.stip ? "stip" : ""}"><span class="g">${g}</span><span class="small"><span class="num">${fmt(E)}</span> ${t("points")}</span><span class="small muted">≥${T0}${T0 === RULES.stip ? " · " + t("stipMark") : ""}</span></div>`;
+      }).join("")}</div></div>`;
+  }
+  const big = c.F != null ? ring(c.F, t("finalScore"), RULES.pass, RULES.stip) : ring(c.D, t("admShort"), RULES.adm, RULES.adm);
+  $("#d-detail").innerHTML = `
+    <div class="row between" style="margin-bottom:14px"><h2>${esc(L(s.name))}</h2>${statusPill(c)}</div>
+    <div class="d-detail">
+      <div>${big}</div>
+      <div style="display:grid;gap:10px">
+        <div class="steps">
+          ${step("Р1", "(ТК1 + РК1) / 2", c.P1)}
+          ${step("Р2", "(ТК2 + РК2) / 2", c.P2)}
+          ${step(t("admShort"), `(Р1 + Р2) / 2 · ${t("admRating")}`, c.D)}
+          ${step("Σ", `${wd} × ${t("admShort")} + ${w} × ${t("exam")}`, c.F)}
+        </div>
+        ${msgs.map(([k, m]) => `<div class="callout ${k}">${esc(m)}</div>`).join("")}
+      </div>
+    </div>${extra}`;
+}
+function renderDSum() {
+  const cs = SUBJECTS.map((s) => calc(SCORES[s.id]));
+  const adm = cs.filter((c) => c.D != null && c.D >= RULES.adm).length;
+  const risk = cs.filter((c) => c.state === "noadm" || c.state === "summer" || (c.state === "needP2" && c.needP2 > 100)).length;
+  const stip = cs.filter((c) => c.state === "stip").length;
+  const lost = cs.filter((c) => c.state === "pass").length;
+  const tile = (n, k, color) => `<div class="stat"><b style="color:${color}">${n}<span class="small muted" style="font:500 13px var(--f-body)"> / ${SUBJECTS.length}</span></b><span>${t(k)}</span></div>`;
+  $("#d-sum").innerHTML = tile(adm, "sumAdm", "var(--accent)") + tile(risk, "sumRisk", "var(--bad)") + tile(stip, "sumStip", "var(--ok)") + tile(lost, "sumLost", "var(--warn)");
+  const w = RULES.wex, wd = Math.round((1 - w) * 100) / 100;
+  $("#formula").innerHTML = `
+    <div class="row between" style="white-space:normal"><strong>${t("fGiven")}</strong><button class="b3 sm" id="edit-rules">${t("editRules")}</button></div>
+    <div>Р1 = (ТК1 + РК1) / 2 · Р2 = (ТК2 + РК2) / 2</div>
+    <div>${t("admShort")} = (Р1 + Р2) / 2 · ${t("final")} = ${wd} × ${t("admShort")} + ${w} × ${t("exam")}</div>
+    <div class="wrap">${esc(t("fAdm", { adm: RULES.adm }))}</div>
+    <div class="wrap">${esc(t("fRules", { pass: RULES.pass, stip: RULES.stip }))}</div>
+    <strong style="margin-top:8px">${t("fAssume")}</strong>
+    <div class="wrap">• ${esc(RULES.exmin == null ? t("aExMinUnknown") : t("aExMinSet", { m: RULES.exmin }))}</div>
+    <div class="wrap">• ${esc(t("aLetters"))}</div>
+    <div class="wrap">• ${esc(t("aRound"))}</div>`;
+  $("#edit-rules").onclick = () => { openSettings(true); $("#rules-opt").scrollIntoView({ block: "start" }); };
+}
+
+// grading rules (Settings)
+function renderRules() {
+  ["adm", "pass", "stip", "wex", "exmin"].forEach((k) => { const el = $("#rule-" + k); if (document.activeElement !== el) el.value = RULES[k] ?? ""; });
+  $("#rule-exmin").placeholder = t("unknown");
+}
+function refreshDopusk() { SUBJECTS.forEach((s) => updateRow(s.id)); renderDopuskDetail(); renderDSum(); renderStats(); }
+["adm", "pass", "stip", "wex", "exmin"].forEach((k) => $("#rule-" + k).oninput = (e) => {
+  const v = e.target.value.replace(",", ".").trim();
+  let n = v === "" ? null : Number(v);
+  if (n != null && Number.isNaN(n)) return;
+  if (k === "wex") { if (n == null || n <= 0 || n >= 1) return; }
+  else if (k !== "exmin" && n == null) return;
+  if (n != null && k !== "wex") n = Math.min(100, Math.max(0, n));
+  RULES[k] = n; store.set("uni2.rules", RULES); refreshDopusk();
+});
+$("#rules-reset").onclick = () => { RULES = Object.assign({}, DEFAULT_RULES); store.set("uni2.rules", RULES); renderRules(); refreshDopusk(); };
+
+// ================= hero stats + boot =================
+function renderStats() {
+  const d = new Date(), today = d.getDay(), nowMin = d.getHours() * 60 + d.getMinutes();
+  $("#today-pill").textContent = `${t("days")[today]}, ${d.getDate()} ${t("months")[d.getMonth()]}`;
+  // landing greeting
+  const todays = SCHEDULE[today] || [], left = todays.filter((l) => toMin(l[1]) > nowMin).length;
+  $("#land-title").textContent = !todays.length ? t("heroNone") : left ? t("heroToday", { n: left }) : t("heroDone");
+  const n = nextLesson();
+  $("#land-sub").textContent = n ? t("heroNext", { s: L(subj(n.l[2]).name), time: `${n.start.toDateString() === d.toDateString() ? "" : t("days")[n.start.getDay()] + ", "}${n.l[0]}`, room: L(n.l[4]) }) : t("noWeek");
+  const open = HW.filter((h) => !DONE.has(h.id)).sort((a, b) => a.due.localeCompare(b.due));
+  $("#land-hw").textContent = t("hwBtn", { n: open.length });
+  // nearest homework
+  $("#dash-hw").innerHTML = `<div class="card-head"><span class="label">${t("nearTasks")}</span><span class="pill ${open.length ? "warn" : "ok"}">${open.length}</span></div>
+    ${open.length ? `<div>${open.slice(0, 3).map((h) => `<div class="mini-hw"><div class="row between"><strong>${esc(L(subj(h.subj).name))}</strong>${dueChip(h.due)}</div><p>${esc(h.text)}</p></div>`).join("")}</div>` : `<p class="muted">${t("noOpen")}</p>`}
+    <button class="b3 sm link-btn" data-goto="homework">${t("allTasks")}</button>`;
+  // admission snapshot
+  const cs = SUBJECTS.map((s) => calc(SCORES[s.id]));
+  const adm = cs.filter((c) => c.D != null && c.D >= RULES.adm).length;
+  const risk = cs.filter((c) => c.state === "noadm" || c.state === "summer" || (c.state === "needP2" && c.needP2 > 100)).length;
+  const need = cs.filter((c) => c.missing.length).length;
+  $("#dash-adm").innerHTML = `<div class="card-head"><span class="label">${t("admCard")}</span>${risk ? `<span class="pill bad">${t("sumRisk")}: ${risk}</span>` : ""}</div>
+    <div class="adm-row">
+      <div><b style="color:var(--accent)">${adm}/${SUBJECTS.length}</b><span>${t("sumAdm")}</span></div>
+      <div><b style="color:var(--bad)">${risk}</b><span>${t("sumRisk")}</span></div>
+      <div><b style="color:var(--warn)">${need}</b><span>${t("stNeedData")}</span></div>
+    </div>
+    <button class="b3 sm link-btn" data-goto="dopusk">${t("admOpen")}</button>`;
+  $$("[data-goto]").forEach((b) => b.onclick = () => { showTab(b.dataset.goto); scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" }); });
+}
+function renderStatic() {
+  $$("[data-i]").forEach((el) => { el.textContent = t(el.dataset.i); });
+  $$("[data-i-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.iAria)));
+  $("#lang-quick").textContent = lang === "kk" ? "EN" : "ҚАЗ";
+  $$("[data-lang]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lang === lang));
+  $("#hw-text").placeholder = t("hwPlaceholder");
+  $("#hw-subj").innerHTML = SUBJECTS.map((s) => `<option value="${s.id}">${esc(L(s.name))}</option>`).join("");
+  $$(".sw").forEach((b) => { b.title = T[lang].colors[b.dataset.c]; b.setAttribute("aria-label", T[lang].colors[b.dataset.c]); });
+  document.title = t("brand");
+  $("#land-img").alt = t("photoAlt");
+  $$("[data-scroll]").forEach((b) => b.onclick = () => $("#" + b.dataset.scroll).scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" }));
+}
+function renderAll() {
+  renderStatic(); renderTabs(); showTab(curTab); renderRemindOptions();
+  renderDays(); renderNext(); renderLessons(); setRole(role);
+  renderSubjects(); renderInfo(); renderRules(); renderDopuskTable(); renderDopuskDetail(); renderDSum(); renderStats();
+}
+document.documentElement.lang = lang;
+curTab = location.hash.slice(1) || "schedule";
+applySettings();
+renderAll();
+setInterval(() => { renderNext(); renderLessons(); renderStats(); checkReminder(); }, 30000);
+</script>
+
+</body>
+</html>
